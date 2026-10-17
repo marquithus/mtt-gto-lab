@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101a19">
+<title>MTT GTO Lab — Estudio de póker</title>
+<style>
+:root{--bg:#0d1514;--panel:#15211f;--panel2:#1b2a27;--line:#2b403b;--text:#edf5f1;--muted:#a4b8b0;--green:#72e0ae;--green2:#173e31;--gold:#f2c879;--red:#ff8d8d;--blue:#8ec9ff}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#172925 0,#0d1514 55%);color:var(--text);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{max-width:1100px;margin:auto;padding:18px 16px 100px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:11px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(145deg,#8bf0bf,#2f8d69);color:#092119;display:grid;place-items:center;font-weight:900;font-size:20px;box-shadow:0 8px 25px #0004}.brand h1{font-size:18px;margin:0;letter-spacing:.2px}.brand p{margin:1px 0 0;color:var(--muted);font-size:12px}
+.pill{border:1px solid #3c6254;border-radius:999px;padding:6px 10px;font-size:11px;color:var(--green);white-space:nowrap}
+.hero{padding:23px;border:1px solid var(--line);border-radius:23px;background:linear-gradient(120deg,#1b332b,#15211f 70%);margin-bottom:16px;position:relative;overflow:hidden}
+.hero:after{content:"♠";position:absolute;right:18px;top:-25px;font-size:150px;color:#ffffff08;pointer-events:none}
+.eyebrow{color:var(--green);font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
+h2{font-size:25px;line-height:1.15;margin:8px 0 9px;max-width:600px}.hero p{margin:0;color:#c1d4cc;max-width:650px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px}.stat{padding:12px;border-radius:13px;background:#0e1916a8;border:1px solid #ffffff0b}.stat strong{display:block;font-size:18px}.stat span{font-size:11px;color:var(--muted)}
+nav{display:flex;gap:7px;overflow:auto;padding:5px 0 13px;margin-bottom:5px;scrollbar-width:none}nav button{border:1px solid var(--line);background:#14201d;color:var(--muted);border-radius:12px;padding:10px 14px;white-space:nowrap;font-weight:650;font-size:13px}nav button.active{background:var(--green);color:#092119;border-color:var(--green)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px}.panel h3{margin:0 0 5px;font-size:17px}.sub{color:var(--muted);font-size:12px;margin:0 0 15px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+label{display:block;color:var(--muted);font-size:12px;margin-bottom:6px}input,select{width:100%;padding:11px 12px;border-radius:10px;background:#0c1714;border:1px solid #345049;color:var(--text);outline:none}input:focus,select:focus{border-color:var(--green)}
+.field{margin-bottom:13px}.btn{border:0;border-radius:11px;padding:12px 15px;background:var(--green);color:#092119;font-weight:800}.btn.secondary{background:#22352f;color:var(--text);border:1px solid #3a554b}.btn.full{width:100%}
+.result{background:#10271f;border:1px solid #2d644e;border-radius:14px;padding:15px;margin-top:14px}.result strong{color:var(--green)}.result .big{font-size:25px;font-weight:850;display:block;margin:3px 0}.note{font-size:12px;color:var(--muted);margin-top:10px}
+.notice{border-left:3px solid var(--gold);padding:10px 12px;background:#2b2518;border-radius:0 9px 9px 0;color:#f1dfb9;font-size:12px;margin-top:12px}
+.hidden{display:none!important}.range-tools{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.range-tools .field{flex:1;min-width:120px}
+.matrix{display:grid;grid-template-columns:repeat(13,minmax(0,1fr));gap:3px;margin-top:14px}.hand{padding:6px 0;min-width:0;border:1px solid #294139;border-radius:4px;background:#20332d;color:#dce9e3;font-size:clamp(8px,1.5vw,12px);font-weight:700}.hand.pair{background:#245f48}.hand.suited{background:#284b64}.hand.off{background:#343b3a}.hand.selected{outline:2px solid var(--gold);outline-offset:1px}
+.legend{display:flex;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:10px}.dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.mini{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:13px}.mini strong{display:block;margin-bottom:5px}.mini p{margin:0;color:var(--muted);font-size:12px}
+.quiz-option{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#0e1916;color:var(--text);border-radius:11px;padding:12px;margin:8px 0}.quiz-option:hover{border-color:var(--green)}.quiz-option.correct{border-color:var(--green);background:#153a2d}.quiz-option.wrong{border-color:var(--red);background:#3b2222}
+.bottom{position:fixed;bottom:0;left:0;right:0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:#0c1514ed;border-top:1px solid var(--line);backdrop-filter:blur(14px);text-align:center;color:var(--muted);font-size:11px}
+.smallbtn{background:transparent;border:1px solid var(--line);color:var(--muted);padding:7px 10px;border-radius:9px;font-size:11px}
+ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
+@media(max-width:650px){.app{padding:13px 12px 95px}.hero{padding:18px}.hero h2{font-size:23px}.grid2,.grid3{grid-template-columns:1fr 1fr}.cards{grid-template-columns:1fr}.panel{padding:14px}.stats{gap:7px}.stat{padding:9px}.stat strong{font-size:16px}.matrix{gap:2px}.hand{padding:5px 0;font-size:8px}.hide-mobile{display:none}}
+</style>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MTT GTO Lab">
+
+</head>
+<body>
+<div class="app">
+<header>
+ <div class="brand"><div class="logo">♠</div><div><h1>MTT GTO Lab</h1><p>Tu laboratorio de estrategia de torneos</p></div></div>
+ <span class="pill">PROTOTIPO v0.1</span>
+</header>
+<section class="hero">
+ <div class="eyebrow">Entrenamiento estratégico · Texas Hold'em</div>
+ <h2>Juega con un plan.<br>Estudia cada decisión.</h2>
+ <p>Una mesa de trabajo para rangos preflop, decisiones de stack corto, pot odds, EV básico y preparación para ICM.</p>
+ <div class="stats"><div class="stat"><strong>169</strong><span>clases de manos</span></div><div class="stat"><strong>MTT</strong><span>enfoque principal</span></div><div class="stat"><strong>7 días</strong><span>plan de estudio sugerido</span></div></div>
+</section>
+<nav>
+ <button class="active" data-tab="solver">Solver / Spot</button><button data-tab="rangos">Rangos</button><button data-tab="quiz">Entrenar</button><button data-tab="icm">ICM y MTT</button><button data-tab="plan">Mi plan</button>
+</nav>
+
+<section id="solver" class="tab">
+ <div class="panel">
+  <h3>Analizar una situación</h3><p class="sub">Introduce los datos de una mano. La calculadora devuelve pot odds y EV inmediato del call; no inventa una solución de equilibrio.</p>
+  <div class="grid2">
+   <div class="field"><label>Formato de mesa</label><select id="table"><option>9-max</option><option>6-max</option><option>Final table</option></select></div>
+   <div class="field"><label>Tu posición</label><select id="position"><option>UTG</option><option>HJ</option><option>CO</option><option selected>BTN</option><option>SB</option><option>BB</option></select></div>
+   <div class="field"><label>Stack efectivo (BB)</label><select id="stack"><option>5</option><option>8</option><option>10</option><option>15</option><option>20</option><option>25</option><option selected>40</option><option>50</option><option>75</option><option>100</option></select></div>
+   <div class="field"><label>Fase del torneo</label><select id="phase"><option>Inicio / lejos de premios</option><option>Antes de la burbuja</option><option>Burbuja</option><option>En premios</option><option>Mesa final</option></select></div>
+   <div class="field"><label>Bote antes de tu call (BB)</label><input id="pot" type="number" min="0" step="0.1" value="8" /></div>
+   <div class="field"><label>Coste de pagar (BB)</label><input id="call" type="number" min="0" step="0.1" value="4" /></div>
+   <div class="field"><label>Equity estimada de tu mano (%)</label><input id="equity" type="number" min="0" max="100" value="38" /></div>
+   <div class="field"><label>Mano (opcional)</label><input id="hand" placeholder="Ej. AJs, 77, KQo" maxlength="4"/></div>
+  </div>
+  <button class="btn full" id="calc">Calcular pot odds y EV del call</button>
+  <div id="calcResult" class="result hidden" aria-live="polite"></div>
+  <div class="notice"><strong>Límite importante:</strong> esto es cálculo matemático de pot odds y EV inmediato bajo una equity introducida por ti. No es una solución GTO: no modela rangos del rival, apuestas futuras, fold equity, ICM ni estrategia de equilibrio.</div>
+ </div>
+ <div class="panel">
+  <h3>Checklist antes de decidir</h3><p class="sub">Las variables que una solución de verdad debe fijar para ser comparable.</p>
+  <div class="cards">
+   <div class="mini"><strong>01 · Rangos</strong><p>Posición, acción previa, rango de apertura, 3-bet y defensa.</p></div>
+   <div class="mini"><strong>02 · Árbol de apuestas</strong><p>Tamaños permitidos, opciones de check, bet, raise y all-in.</p></div>
+   <div class="mini"><strong>03 · Torneo</strong><p>Stacks de toda la mesa, premios, jugadores restantes e ICM cuando proceda.</p></div>
+  </div>
+ </div>
+</section>
+
+<section id="rangos" class="tab hidden">
+ <div class="panel">
+  <h3>Matriz de manos iniciales</h3><p class="sub">Selecciona una mano para estudiarla. La matriz muestra las 169 clases (pares, suited y offsuit); el color solo identifica la clase, no una recomendación GTO.</p>
+  <div class="range-tools">
+   <div class="field"><label>Contexto de estudio</label><select id="rangeContext"><option>Abrir first-in · 40 BB</option><option>Abrir first-in · 20 BB</option><option>Defender BB vs BTN</option><option>3-bet vs CO</option><option>Push/fold · 10 BB</option></select></div>
+   <div class="field"><label>Posición</label><select id="rangePos"><option>UTG</option><option>HJ</option><option>CO</option><option selected>BTN</option><option>SB</option><option>BB</option></select></div>
+  </div>
+  <div id="matrix" class="matrix" aria-label="Matriz de 169 clases de manos"></div>
+  <div class="legend"><span><i class="dot" style="background:#245f48"></i>Pareja</span><span><i class="dot" style="background:#284b64"></i>Suited</span><span><i class="dot" style="background:#343b3a"></i>Offsuit</span><span>Seleccionada: borde dorado</span></div>
+  <div id="handInfo" class="result"><strong>Selecciona una mano</strong><div class="note">Aquí aparecerá la clase seleccionada y el contexto. Esta versión no asigna frecuencias GTO inventadas.</div></div>
+  <div class="notice">Las frecuencias correctas dependen de stacks, posiciones, antes, tamaños, rangos previos y estructura de premios. Para mostrar una tabla GTO auténtica hay que importar soluciones calculadas o conectar un motor validado.</div>
+ </div>
+</section>
+
+<section id="quiz" class="tab hidden">
+ <div class="panel">
+  <h3>Entrenamiento rápido</h3><p class="sub">Preguntas conceptuales para consolidar fundamentos de MTT.</p>
+  <div id="quizArea"></div><button class="btn secondary full" id="nextQuiz">Siguiente pregunta</button>
+ </div>
+ <div class="panel"><h3>Tu sesión</h3><div class="grid3"><div class="mini"><strong id="qCorrect">0</strong><p>Respuestas correctas</p></div><div class="mini"><strong id="qTotal">0</strong><p>Preguntas respondidas</p></div><div class="mini"><strong id="qRate">—</strong><p>Porcentaje de acierto</p></div></div><button class="smallbtn" id="resetQuiz" style="margin-top:12px">Reiniciar estadísticas</button></div>
+</section>
+
+<section id="icm" class="tab hidden">
+ <div class="panel">
+  <h3>ICM: laboratorio conceptual</h3><p class="sub">Estudia las diferencias entre valor en fichas y valor monetario de premios.</p>
+  <div class="grid2">
+   <div class="field"><label>Fase</label><select id="icmPhase"><option>Burbuja</option><option>Salto de premios</option><option>Mesa final</option><option>Lejos de premios</option></select></div>
+   <div class="field"><label>Tu stack relativo</label><select id="icmStack"><option>Stack corto</option><option>Stack medio</option><option>Chip leader</option></select></div>
+  </div>
+  <button class="btn full" id="icmExplain">Mostrar guía estratégica</button>
+  <div id="icmResult" class="result hidden"></div>
+  <div class="notice">El ICM real requiere los stacks de todos los jugadores y la estructura de premios. Esta guía no calcula equity monetaria ni sustituye un modelo ICM numérico.</div>
+ </div>
+ <div class="panel"><h3>Conceptos que debe cubrir el motor completo</h3><ul class="clean"><li>Chip EV y rangos de equilibrio.</li><li>ICM por burbuja, saltos de premios y mesa final.</li><li>Risk premium por jugador y cobertura de stacks.</li><li>Push/fold y decisiones de call-off.</li><li>Rangos dependientes de posición, stack, antes y acciones previas.</li></ul></div>
+</section>
+
+<section id="plan" class="tab hidden">
+ <div class="panel"><h3>Plan de estudio MTT · 7 días</h3><p class="sub">Marca las tareas que termines. Tu progreso se mantiene en esta página mientras esté abierta.</p>
+ <div id="tasks"></div><div class="result"><strong id="progressText">0 de 7 días completados</strong><div style="height:8px;background:#263b34;border-radius:99px;margin-top:10px;overflow:hidden"><div id="progressBar" style="height:100%;width:0;background:var(--green);transition:width .2s"></div></div></div>
+ <button class="smallbtn" id="resetPlan" style="margin-top:12px">Reiniciar plan</button></div>
+ <div class="panel"><h3>Lo que falta para ser un solver completo</h3><ul class="clean"><li>Motor de cálculo de equilibrio (p. ej. CFR/CFR+) con pruebas de convergencia.</li><li>Rangos iniciales configurables y árbol de apuestas por calle.</li><li>Resolución postflop y cálculo de frecuencias/EV por combo.</li><li>Motor ICM con stacks completos y premios del torneo.</li><li>Base de soluciones verificadas, versionadas y comparadas contra referencias.</li><li>Importación de historiales y exportación de informes.</li></ul></div>
+</section>
+</div>
+<div class="bottom">MTT GTO Lab · Prototipo educativo · No usar como consejo de juego garantizado</div>
+<script>
+const tabs=[...document.querySelectorAll('nav button')];
+tabs.forEach(b=>b.addEventListener('click',()=>{tabs.forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));}));
+const fmt=n=>Number(n).toLocaleString('es-ES',{maximumFractionDigits:2});
+document.getElementById('calc').addEventListener('click',()=>{
+ const pot=Number(document.getElementById('pot').value), call=Number(document.getElementById('call').value), eq=Number(document.getElementById('equity').value)/100;
+ const out=document.getElementById('calcResult');out.classList.remove('hidden');
+ if(!Number.isFinite(pot)||!Number.isFinite(call)||!Number.isFinite(eq)||pot<0||call<=0||eq<0||eq>1){out.innerHTML='<strong>Revisa los datos</strong><div class="note">El bote debe ser ≥ 0, el call > 0 y la equity estar entre 0 y 100%.</div>';return}
+ const odds=call/(pot+call)*100, ev=eq*(pot+call)-call;
+ out.innerHTML=`<strong>Resultado de cálculo</strong><span class="big">${fmt(odds)}% de equity necesaria</span><div>Equity introducida: <b>${fmt(eq*100)}%</b></div><div>EV inmediato estimado del call: <b style="color:${ev>=0?'var(--green)':'var(--red)'}">${ev>=0?'+':''}${fmt(ev)} BB</b></div><div class="note">Fórmula: equity necesaria = call ÷ (bote + call). EV inmediato = equity × (bote + call) − call. Supone que la equity es correcta y que no hay apuestas futuras ni ICM.</div>`;
+});
+const ranks=['A','K','Q','J','T','9','8','7','6','5','4','3','2'];const matrix=document.getElementById('matrix');let selectedHand='AKs';
+ranks.forEach((r,i)=>ranks.forEach((c,j)=>{let hand,cls;if(i===j){hand=r+c;cls='pair'}else if(i<j){hand=r+c+'s';cls='suited'}else{hand=c+r+'o';cls='off'}const b=document.createElement('button');b.className='hand '+cls;b.textContent=hand;b.title=hand;b.addEventListener('click',()=>{document.querySelectorAll('.hand').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');selectedHand=hand;showHand()});if(hand===selectedHand)b.classList.add('selected');matrix.appendChild(b)}));
+function showHand(){document.getElementById('handInfo').innerHTML=`<strong>${selectedHand}</strong><div class="note">Contexto: ${document.getElementById('rangeContext').value} · Posición seleccionada: ${document.getElementById('rangePos').value}. Para evitar engañarte, este prototipo no asigna una frecuencia GTO sin una solución de referencia validada.</div>`}
+document.getElementById('rangeContext').addEventListener('change',showHand);document.getElementById('rangePos').addEventListener('change',showHand);
+const qs=[
+ {q:'En una solución chip EV, ¿qué mide el EV?',a:['La ganancia/pérdida media esperada en fichas de una acción','La probabilidad exacta de ganar el torneo','El tamaño de la ciega grande'],c:0,e:'EV es el valor esperado de una acción bajo los supuestos del modelo; no es una garantía del resultado de una mano.'},
+ {q:'¿Qué cambia al acercarse la burbuja?',a:['Nunca cambia la estrategia','El valor monetario de perder fichas puede superar el de ganar la misma cantidad','Solo importa tu mano, no los stacks'],c:1,e:'La presión ICM puede generar risk premium: arriesgar fichas puede costar más en valor de premios de lo que aporta ganar la misma cantidad.'},
+ {q:'¿Un rango de push es igual a un rango de call contra un all-in?',a:['Sí, siempre','No; las manos y el precio de pagar son diferentes','Solo en mesa final'],c:1,e:'Quien empuja puede ganar el bote sin showdown; quien paga necesita suficiente equity contra el rango de shove.'},
+ {q:'¿Qué datos necesita una recomendación GTO reproducible?',a:['Solo tus dos cartas','Posición, stacks, acciones, tamaños y modelo de juego','Solo el resultado de la mano'],c:1,e:'Las soluciones dependen de los supuestos y del árbol de decisiones definido.'},
+ {q:'¿Una estrategia GTO siempre maximiza ganancias contra un rival débil?',a:['Sí, siempre','No; explotar errores puede ganar más, aunque exige estimar tendencias','GTO no usa matemáticas'],c:1,e:'GTO busca una estrategia robusta frente a explotación. Una estrategia explotativa puede tener más EV contra un rival que comete errores conocidos.'}
+];let qi=0,correct=0,total=0,answered=false;
+function renderQuiz(){answered=false;const q=qs[qi%qs.length];const area=document.getElementById('quizArea');area.innerHTML=`<div class="eyebrow">Pregunta ${qi%qs.length+1} de ${qs.length}</div><h3 style="margin:7px 0 12px">${q.q}</h3>`;q.a.forEach((a,i)=>{const b=document.createElement('button');b.className='quiz-option';b.textContent=a;b.onclick=()=>{if(answered)return;answered=true;total++;if(i===q.c){correct++;b.classList.add('correct')}else{b.classList.add('wrong');area.querySelectorAll('.quiz-option')[q.c].classList.add('correct')}const note=document.createElement('div');note.className='result';note.innerHTML=`<strong>${i===q.c?'Correcto':'Repasa este concepto'}</strong><div class="note">${q.e}</div>`;area.appendChild(note);updateStats()};area.appendChild(b)});}
+function updateStats(){document.getElementById('qCorrect').textContent=correct;document.getElementById('qTotal').textContent=total;document.getElementById('qRate').textContent=total?Math.round(correct/total*100)+'%':'—'}
+document.getElementById('nextQuiz').onclick=()=>{qi++;renderQuiz()};document.getElementById('resetQuiz').onclick=()=>{correct=0;total=0;qi=0;updateStats();renderQuiz()};renderQuiz();
+document.getElementById('icmExplain').onclick=()=>{const ph=document.getElementById('icmPhase').value,st=document.getElementById('icmStack').value;let msg='';if(ph==='Lejos de premios')msg='La estrategia suele estar más próxima a chip EV, aunque la estructura del torneo y las circunstancias todavía importan.';else if(st==='Stack corto')msg='Evita arriesgar tu torneo sin comparar el rango rival, el precio del call y los stacks que quedan por actuar. El stack corto no significa pagar más amplio automáticamente.';else if(st==='Chip leader')msg='Puedes ejercer presión sobre stacks que arriesgan más valor de premios, pero no debes convertir esa ventaja en apuestas indiscriminadas.';else msg='Revisa los saltos de premios, stacks de todos los jugadores y quién cubre a quién. El ICM puede estrechar algunos calls y cambiar la presión de los all-ins.';document.getElementById('icmResult').classList.remove('hidden');document.getElementById('icmResult').innerHTML=`<strong>${ph} · ${st}</strong><div style="margin-top:7px">${msg}</div><div class="note">Guía conceptual, no cálculo ICM personalizado. Para calcularlo se necesita la distribución completa de stacks y premios.</div>`};
+const taskNames=['Revisar rangos de apertura por posición','Practicar 3-bets y defensas','Estudiar decisiones con 20–30 BB','Practicar push/fold con 5–15 BB','Comparar chip EV e ICM','Revisar cinco errores y sus explicaciones','Completar una prueba de 40 decisiones'];
+const tasks=document.getElementById('tasks');taskNames.forEach((t,i)=>{const l=document.createElement('label');l.style.display='flex';l.style.alignItems='start';l.style.gap='10px';l.style.padding='10px 0';l.style.borderBottom='1px solid var(--line)';l.innerHTML=`<input type="checkbox" style="width:18px;margin-top:2px;accent-color:#72e0ae" data-day="${i}"><span><b>Día ${i+1}</b><br>${t}</span>`;tasks.appendChild(l)});function updatePlan(){const n=tasks.querySelectorAll('input:checked').length;document.getElementById('progressText').textContent=`${n} de 7 días completados`;document.getElementById('progressBar').style.width=(n/7*100)+'%'}tasks.addEventListener('change',updatePlan);document.getElementById('resetPlan').onclick=()=>{tasks.querySelectorAll('input').forEach(x=>x.checked=false);updatePlan()};
+</script>
+
+<script>
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
+}
+</script>
+
+</body>
+</html>

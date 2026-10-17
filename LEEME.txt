@@ -1,0 +1,22 @@
+MTT GTO Lab — paquete PWA para iPhone
+
+CONTENIDO
+- index.html: aplicación web
+- manifest.webmanifest: nombre, iconos y modo de pantalla completa
+- sw.js: caché básica para volver a abrir la app tras la primera carga
+- icons/: iconos para instalación
+
+IMPORTANTE
+Para que iOS permita añadir la app a la pantalla de inicio con comportamiento PWA, estos archivos deben estar publicados en una dirección HTTPS. Abrir index.html desde Archivos no equivale a instalar una PWA y el service worker no funciona desde file://.
+
+MÉTODO SENCILLO: GitHub Pages
+1. En un ordenador, entra en https://github.com y crea una cuenta o inicia sesión.
+2. Crea un repositorio nuevo llamado mtt-gto-lab. Puede ser público para usar GitHub Pages gratis.
+3. Sube TODOS los archivos y carpetas de este ZIP a la raíz del repositorio. Asegúrate de que index.html quede en la raíz.
+4. En Settings > Pages, elige Deploy from a branch, selecciona la rama main y la carpeta /(root), y guarda.
+5. Espera a que GitHub Pages publique la web. La dirección será similar a https://TU-USUARIO.github.io/mtt-gto-lab/ (sustituye TU-USUARIO por tu nombre real de GitHub).
+6. En el iPhone, abre esa dirección con Safari.
+7. Pulsa Compartir (cuadrado con flecha hacia arriba) > Añadir a pantalla de inicio > Añadir.
+8. Abre MTT GTO Lab desde el nuevo icono.
+
+También se puede usar otro alojamiento HTTPS. No compartas contraseñas ni datos personales en el repositorio.
