@@ -1,24 +1,15 @@
-MTT GTO Lab 0.2 — importador de historiales
+MTT GTO Lab 0.3 — analizador descriptivo de historiales
 
-ARCHIVOS
-- index.html: aplicación y nuevo importador local de manos
-- manifest.webmanifest, sw.js e icons/: PWA e instalación
+ACTUALIZACIÓN
+Sube index.html, sw.js y LEEME.txt a la raíz del repositorio GitHub y confirma los cambios. Mantén la carpeta icons/ y manifest.webmanifest existentes.
 
 NOVEDADES
-- Importa .txt/.log/.xml y pega historiales de manos PokerStars compatibles.
-- Reconstruye cabeceras, cartas visibles, board, asientos y acciones detectadas.
-- Procesa los archivos localmente en el navegador; no los envía a un servidor.
-- CSV tabular de Poker Copilot no equivale a un historial completo; exporta “Hand history files” en XML.
+- Pestaña Estadísticas y errores.
+- Resumen de manos importadas y acciones reconocidas.
+- Métricas preflop aproximadas (VPIP/PFR/posible 3-bet) cuando los historiales permiten atribuir acciones al héroe.
+- Frecuencias observadas de bet/raise por calle y algunos importes detectados.
+- Alertas de calidad de datos y lista de manos para revisar.
+- Los historiales se procesan localmente en el navegador.
 
-LÍMITES IMPORTANTES
-Esta versión no es un solver GTO de equilibrio. No calcula frecuencias GTO reales ni EV estratégico por calle. Reconstruye el historial y las acciones reconocidas. La compatibilidad XML puede variar según la versión de Poker Copilot; prueba primero un archivo pequeño.
-
-ACTUALIZAR GITHUB PAGES
-1. Abre el repositorio GitHub mtt-gto-lab y elige Add file > Upload files.
-2. Sube los archivos nuevos de este ZIP a la raíz del repositorio: index.html, sw.js y LEEME.txt. Sustituye los existentes si GitHub lo pregunta.
-3. Pulsa Commit changes. No hace falta volver a configurar Pages.
-4. Espera 1–3 minutos y abre https://marquithus.github.io/mtt-gto-lab/ en Safari.
-5. Si la app instalada sigue mostrando la versión antigua, cierra la app y vuelve a abrirla; si sigue igual, abre la URL en Safari y recarga.
-
-PRIVACIDAD
-El repositorio GitHub es público. No subas historiales de manos, exportaciones personales ni datos de juego al repositorio; solo sube los archivos de la aplicación.
+LIMITACIONES
+Este módulo es análisis descriptivo/heurístico, no un solver GTO de equilibrio. No afirma que una decisión sea un error GTO. El % del bote solo se debe calcular cuando se reconstruye el bote previo de forma fiable; esta versión no lo calcula si no puede garantizarlo. Los datos se mantienen en memoria de la pestaña y se pierden al cerrarla.

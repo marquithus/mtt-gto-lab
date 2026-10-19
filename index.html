@@ -47,7 +47,7 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
 <div class="app">
 <header>
  <div class="brand"><div class="logo">♠</div><div><h1>MTT GTO Lab</h1><p>Tu laboratorio de estrategia de torneos</p></div></div>
- <span class="pill">VERSIÓN 0.2 · IMPORTADOR</span>
+ <span class="pill">VERSIÓN 0.3 · ANALIZADOR</span>
 </header>
 <section class="hero">
  <div class="eyebrow">Entrenamiento estratégico · Texas Hold'em</div>
@@ -56,7 +56,7 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
  <div class="stats"><div class="stat"><strong>169</strong><span>clases de manos</span></div><div class="stat"><strong>MTT</strong><span>enfoque principal</span></div><div class="stat"><strong>7 días</strong><span>plan de estudio sugerido</span></div></div>
 </section>
 <nav>
- <button class="active" data-tab="solver">Solver / Spot</button><button data-tab="importar">Importar manos</button><button data-tab="rangos">Rangos</button><button data-tab="quiz">Entrenar</button><button data-tab="icm">ICM y MTT</button><button data-tab="plan">Mi plan</button>
+ <button class="active" data-tab="solver">Solver / Spot</button><button data-tab="importar">Importar manos</button><button data-tab="analisis">Estadísticas y errores</button><button data-tab="rangos">Rangos</button><button data-tab="quiz">Entrenar</button><button data-tab="icm">ICM y MTT</button><button data-tab="plan">Mi plan</button>
 </nav>
 
 <section id="solver" class="tab">
@@ -84,6 +84,19 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
    <div class="mini"><strong>03 · Torneo</strong><p>Stacks de toda la mesa, premios, jugadores restantes e ICM cuando proceda.</p></div>
   </div>
  </div>
+</section>
+
+
+<section id="analisis" class="tab hidden">
+ <div class="panel"><h3>Tu informe de rendimiento</h3><p class="sub">Estadísticas calculadas sobre las manos importadas en esta sesión. Los valores se muestran solo cuando se pueden inferir del historial.</p>
+ <div class="stats" id="analysisKpis"><div class="stat"><strong>—</strong><span>Manos importadas</span></div><div class="stat"><strong>—</strong><span>Manos con acciones</span></div><div class="stat"><strong>—</strong><span>Acciones reconocidas</span></div></div>
+ <div id="analysisSummary" class="result"><strong>Importa historiales para empezar</strong><div class="note">Después pulsa «Actualizar análisis».</div></div>
+ <button class="btn full" id="refreshAnalysis" style="margin-top:12px">Actualizar análisis</button>
+ </div>
+ <div class="panel"><h3>Estadísticas preflop</h3><div id="preflopStats" class="cards"><div class="mini"><strong>VPIP</strong><p>Esperando manos.</p></div><div class="mini"><strong>PFR</strong><p>Esperando manos.</p></div><div class="mini"><strong>3-bet</strong><p>Esperando manos.</p></div></div><p class="note">Estas métricas requieren que el nombre del héroe y las acciones preflop se reconozcan correctamente. Si faltan datos, se indicará.</p></div>
+ <div class="panel"><h3>Frecuencia y tamaños de apuestas</h3><div id="betStats" class="cards"><div class="mini"><strong>Apuestas</strong><p>Importa manos para calcular.</p></div></div><p class="note">Los porcentajes de bote se calculan solo si el historial permite reconstruir el bote previo y el importe de la apuesta. Si no, se mostrarán importes detectados, sin inventar un porcentaje.</p></div>
+ <div class="panel"><h3>Errores y aspectos a revisar</h3><div id="leakList"><p class="sub">Importa manos para obtener observaciones.</p></div><p class="notice">Las observaciones son alertas heurísticas, no veredictos GTO. Para afirmar que una decisión es un error de equilibrio hace falta comparar el spot con una solución válida.</p></div>
+ <div class="panel"><h3>Manos que conviene revisar</h3><div id="reviewList"><p class="sub">Aquí aparecerán manos con datos incompletos o decisiones de apuesta/call/raise para revisar.</p></div></div>
 </section>
 
 <section id="rangos" class="tab hidden">
@@ -149,7 +162,7 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
 <div class="bottom">MTT GTO Lab · Prototipo educativo · No usar como consejo de juego garantizado</div>
 <script>
 const tabs=[...document.querySelectorAll('nav button')];
-tabs.forEach(b=>b.addEventListener('click',()=>{tabs.forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));}));
+tabs.forEach(b=>b.addEventListener('click',()=>{tabs.forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('.tab').forEach(s=>s.classList.toggle('hidden',s.id!==b.dataset.tab));if(b.dataset.tab==='analisis')renderAnalysis();}));
 const fmt=n=>Number(n).toLocaleString('es-ES',{maximumFractionDigits:2});
 document.getElementById('calc').addEventListener('click',()=>{
  const pot=Number(document.getElementById('pot').value), call=Number(document.getElementById('call').value), eq=Number(document.getElementById('equity').value)/100;
@@ -212,15 +225,50 @@ function parseHands(raw,filename='texto pegado'){
   }
   const seats=[...raw.matchAll(/Seat (\d+):\s+(.+?)\s+\(([^)]+)\)/g)].map(m=>({seat:m[1],player:m[2],stack:m[3]}));
   const pot=(raw.match(/Total pot\s+([^|\n]+)/i)||[])[1]?.trim()||'';
-  return {id,line,filename,date,game,table,heroName:hero[1]||'',heroCards:hero[2]||'',boardText:board.slice(1).filter(Boolean).join(' / '),seats,actions:streets,pot,raw};
+  const heroName=hero[1]||'';
+  const parsedActions=streets.map(a=>{const actor=(a.line.match(/^([^:]+):/)||[])[1]||'';const low=a.line.toLowerCase();let type='other';if(/\bfolds\b/.test(low))type='fold';else if(/\bchecks\b/.test(low))type='check';else if(/\bcalls\b/.test(low))type='call';else if(/\bbets\b/.test(low))type='bet';else if(/\braises\b/.test(low))type='raise';else if(/\bposts (?:the )?(?:small|big) blind\b/.test(low))type='blind';const amt=(a.line.match(/(?:bets|raises|calls|collected)\s+(?:to\s+)?\$?([\d,.]+)/i)||[])[1];return {...a,actor,type,amount:amt?Number(amt.replace(/,/g,'')):null,isHero:!!heroName&&actor.trim()===heroName.trim()};});
+  return {id,line,filename,date,game,table,heroName,heroCards:hero[2]||'',boardText:board.slice(1).filter(Boolean).join(' / '),seats,actions:parsedActions,pot,raw};
  });
  return {hands,reason:''};
 }
 function renderHands(){const panel=$('handsPanel'),list=$('handList');if(!importedHands.length){panel.classList.add('hidden');return}panel.classList.remove('hidden');$('handCount').textContent=`${importedHands.length} mano(s) detectada(s) · datos locales`;list.innerHTML='';importedHands.forEach((h,i)=>{const card=document.createElement('details');card.className='mini';card.style.margin='10px 0';const summary=document.createElement('summary');summary.style.cursor='pointer';summary.style.fontWeight='800';summary.textContent=`${h.id?'Mano #'+h.id:'Mano '+(i+1)} · ${h.heroName||'Jugador no detectado'} · ${h.heroCards||'cartas no detectadas'}`;card.appendChild(summary);const meta=document.createElement('p');meta.style.margin='10px 0';meta.textContent=[h.date,h.game,h.table,h.pot?'Bote final: '+h.pot:''].filter(Boolean).join(' · ')||'Metadatos parciales';card.appendChild(meta);if(h.boardText){const b=document.createElement('p');b.textContent='Board detectado: '+h.boardText;card.appendChild(b)}if(h.seats.length){const p=document.createElement('p');p.textContent='Asientos: '+h.seats.map(s=>`${s.player} (${s.stack})`).join(' · ');card.appendChild(p)}const actionTitle=document.createElement('p');actionTitle.style.fontWeight='800';actionTitle.textContent=`Acciones detectadas (${h.actions.length})`;card.appendChild(actionTitle);const ol=document.createElement('ol');ol.style.paddingLeft='22px';h.actions.slice(0,150).forEach(a=>{const li=document.createElement('li');li.textContent=`${a.street}: ${a.line}`;ol.appendChild(li)});card.appendChild(ol);if(!h.actions.length){const warn=document.createElement('p');warn.textContent='No se detectaron acciones con este formato. Comprueba que sea el historial completo en texto.';card.appendChild(warn)}const rawBtn=document.createElement('button');rawBtn.className='smallbtn';rawBtn.textContent='Ver texto original';rawBtn.onclick=()=>{const pre=card.querySelector('pre');if(pre)pre.remove();else{const p=document.createElement('pre');p.style.whiteSpace='pre-wrap';p.style.overflowWrap='anywhere';p.style.fontSize='11px';p.textContent=h.raw;card.appendChild(p)}};card.appendChild(rawBtn);list.appendChild(card)});}
-function addImported(raw,name){const res=parseHands(raw,name);if(!res.hands.length){showImportStatus(`<strong>No se detectaron manos</strong><div class="note">${res.reason}</div>`);return 0}res.hands.forEach(h=>{h.filename=name;importedHands.push(h)});renderHands();showImportStatus(`<strong>Importación completada</strong><div>${res.hands.length} mano(s) detectada(s) en ${name}.</div><div class="note">Las manos se mantienen en memoria en esta pestaña. No son una solución GTO: son una reconstrucción del historial y sus acciones.</div>`);return res.hands.length;}
+function addImported(raw,name){const res=parseHands(raw,name);if(!res.hands.length){showImportStatus(`<strong>No se detectaron manos</strong><div class="note">${res.reason}</div>`);return 0}res.hands.forEach(h=>{h.filename=name;importedHands.push(h)});renderHands();renderAnalysis();showImportStatus(`<strong>Importación completada</strong><div>${res.hands.length} mano(s) detectada(s) en ${name}.</div><div class="note">Las manos se mantienen en memoria en esta pestaña. No son una solución GTO: son una reconstrucción del historial y sus acciones.</div>`);return res.hands.length;}
 $('importFiles').addEventListener('click',async()=>{const files=[...$('handFiles').files];if(!files.length){showImportStatus('<strong>Selecciona primero un archivo</strong>');return}let total=0;for(const file of files){try{const raw=await file.text();total+=addImported(raw,file.name)}catch(e){showImportStatus(`<strong>No se pudo leer ${file.name}</strong><div class="note">Prueba a abrirlo y exportarlo de nuevo en formato XML de historiales completos.</div>`)}}if(total)showImportStatus(`<strong>Importación completada</strong><div>${total} mano(s) detectada(s) en ${files.length} archivo(s).</div><div class="note">Los historiales se procesan localmente y no se guardan permanentemente.</div>`)});
 $('parsePaste').addEventListener('click',()=>{const raw=$('handPaste').value.trim();if(!raw){showImportStatus('<strong>Pega primero el historial de una mano</strong>');return}addImported(raw,'texto pegado')});
-$('clearHands').addEventListener('click',()=>{importedHands=[];renderHands();showImportStatus('<strong>Lista vaciada</strong><div class="note">Se han retirado las manos de esta sesión del navegador.</div>')});
+$('clearHands').addEventListener('click',()=>{importedHands=[];renderHands();renderAnalysis();showImportStatus('<strong>Lista vaciada</strong><div class="note">Se han retirado las manos de esta sesión del navegador.</div>')});
+</script>
+
+
+<script>
+// MTT GTO Lab 0.3: análisis descriptivo basado en acciones reconocidas; no es solver de equilibrio.
+function pct(a,b){return b?Math.round(a/b*100)+'%':'—'}
+function moneyNum(s){if(!s)return null;const m=String(s).match(/[\d]+(?:[.,][\d]+)?/);return m?Number(m[0].replace(',','.')):null}
+function cardBox(title,value,desc){return `<div class="mini"><strong>${title}: ${value}</strong><p>${desc}</p></div>`}
+function renderAnalysis(){
+ const hands=importedHands||[];const totalActions=hands.reduce((n,h)=>n+h.actions.length,0);const withActions=hands.filter(h=>h.actions.length).length;
+ const k=$('analysisKpis');if(!k)return;k.innerHTML=`<div class="stat"><strong>${hands.length}</strong><span>Manos importadas</span></div><div class="stat"><strong>${withActions}</strong><span>Con acciones detectadas</span></div><div class="stat"><strong>${totalActions}</strong><span>Acciones reconocidas</span></div>`;
+ if(!hands.length){$('analysisSummary').innerHTML='<strong>No hay manos cargadas en esta sesión</strong><div class="note">Ve a «Importar manos», selecciona tus historiales y pulsa importar. Los historiales no se guardan al cerrar la pestaña.</div>';return}
+ const heroHands=hands.filter(h=>h.heroName);const actionHands=heroHands.filter(h=>h.actions.some(a=>a.isHero));const heroActions=hands.flatMap(h=>h.actions.filter(a=>a.isHero));
+ const pre=hands.map(h=>({h,acts:h.actions.filter(a=>a.street==='Preflop')})).filter(x=>x.h.heroName&&x.acts.length);
+ let vpip=0,pfr=0,threeBetHands=0,preflopDenom=pre.length;
+ for(const x of pre){const ha=x.acts.filter(a=>a.isHero);if(ha.some(a=>['call','bet','raise'].includes(a.type)))vpip++;if(ha.some(a=>a.type==='raise'))pfr++;if(ha.filter(a=>a.type==='raise').length>=2)threeBetHands++;}
+ const allStreets=['Preflop','Flop','Turn','River'];const typeCounts={fold:0,check:0,call:0,bet:0,raise:0,blind:0,other:0};heroActions.forEach(a=>typeCounts[a.type]=(typeCounts[a.type]||0)+1);
+ const heroAgg=heroActions.filter(a=>['bet','raise'].includes(a.type)).length;const heroCalls=heroActions.filter(a=>a.type==='call').length;const bets=heroActions.filter(a=>['bet','raise'].includes(a.type));
+ const streetBoxes=allStreets.map(st=>{const n=heroActions.filter(a=>a.street===st).length;const ag=heroActions.filter(a=>a.street===st&&['bet','raise'].includes(a.type)).length;return cardBox(st, n?pct(ag,n):'—',`${ag} apuestas/raises entre ${n} acciones del héroe reconocidas`)}).join('');
+ $('analysisSummary').innerHTML=`<strong>Resumen de la muestra</strong><div style="margin-top:8px">Se detectaron ${hands.length} manos; ${heroHands.length} tienen nombre de héroe y ${actionHands.length} contienen acciones atribuidas a ese jugador.</div><div class="note">La fiabilidad depende de que el importador identifique bien el nombre del héroe y las acciones. No interpretes una muestra pequeña como una conclusión sobre tu nivel.</div>`;
+ $('preflopStats').innerHTML=cardBox('VPIP',preflopDenom?pct(vpip,preflopDenom):'No calculable',`${vpip} manos con call/bet/raise preflop del héroe entre ${preflopDenom} manos con preflop reconocible.`)+cardBox('PFR',preflopDenom?pct(pfr,preflopDenom):'No calculable',`${pfr} manos con raise preflop del héroe. Métrica aproximada según acciones detectadas.`)+cardBox('Posible 3-bet',preflopDenom?pct(threeBetHands,preflopDenom):'No calculable',`${threeBetHands} manos con al menos dos raises preflop del héroe; aproximación, no estadística exacta de 3-bet.`);
+ const amtList=bets.filter(a=>Number.isFinite(a.amount)).map(a=>a.amount);const amtSum=amtList.reduce((a,b)=>a+b,0);const avg=amtList.length?amtSum/amtList.length:null;const max=amtList.length?Math.max(...amtList):null;
+ $('betStats').innerHTML=cardBox('Bet/raise del héroe',bets.length,`${heroActions.length?pct(bets.length,heroActions.length):'—'} de las acciones atribuidas al héroe.`)+cardBox('Call del héroe',heroCalls,`${heroActions.length?pct(heroCalls,heroActions.length):'—'} de sus acciones reconocidas.`)+cardBox('Importes detectados',amtList.length,avg===null?'El formato no expone importes parseables.':`Media numérica ${avg.toFixed(2)} · máximo ${max.toFixed(2)} (unidades según el historial).`)+streetBoxes;
+ const issues=[];
+ if(!heroHands.length)issues.push(['No se detecta el héroe','El formato importado puede no incluir “Dealt to …” o no ser un historial PokerStars estándar. Revisa el nombre del jugador y el archivo.']);
+ else if(actionHands.length/heroHands.length<.6)issues.push(['Acciones del héroe incompletas',`Solo se atribuyen acciones del héroe en ${actionHands.length} de ${heroHands.length} manos con nombre detectado. No uses aún las estadísticas como fiables.`]);
+ if(preflopDenom<30)issues.push(['Muestra preflop pequeña',`Solo ${preflopDenom} manos con preflop reconocible. Importa más manos antes de sacar conclusiones sobre VPIP/PFR.`]);
+ if(heroActions.length && heroActions.filter(a=>a.type==='other').length/heroActions.length>.25)issues.push(['Muchas acciones sin clasificar','Hay líneas que el analizador no ha podido categorizar. Puede ser una variante de formato o traducción; conviene revisar el texto original.']);
+ const checks=[['Frecuencia de agresión por calle',`Preflop ${pct(heroActions.filter(a=>a.street==='Preflop'&&['bet','raise'].includes(a.type)).length,heroActions.filter(a=>a.street==='Preflop').length)}, flop ${pct(heroActions.filter(a=>a.street==='Flop'&&['bet','raise'].includes(a.type)).length,heroActions.filter(a=>a.street==='Flop').length)}, turn ${pct(heroActions.filter(a=>a.street==='Turn'&&['bet','raise'].includes(a.type)).length,heroActions.filter(a=>a.street==='Turn').length)}, river ${pct(heroActions.filter(a=>a.street==='River'&&['bet','raise'].includes(a.type)).length,heroActions.filter(a=>a.street==='River').length)}. Esto describe frecuencias observadas; no determina por sí solo si son correctas.`],['Revisar tamaños de apuesta','No se calcula % del bote sin reconstruir con seguridad el bote inmediatamente anterior a cada acción. No debe inferirse a partir del bote final.']];
+ $('leakList').innerHTML=[...issues,...checks].map(([t,d])=>`<div class="mini" style="margin:8px 0"><strong>${t}</strong><p>${d}</p></div>`).join('');
+ const review=hands.filter(h=>h.actions.length).slice(0,20);$('reviewList').innerHTML=review.length?review.map((h,i)=>`<details class="mini" style="margin:8px 0"><summary>${h.id?'Mano #'+h.id:'Mano '+(i+1)} · ${h.heroName||'héroe no detectado'} · ${h.heroCards||'cartas no detectadas'}</summary><p style="margin-top:8px">${h.boardText?'Board: '+h.boardText+' · ':''}${h.actions.length} acciones detectadas. Revisa la secuencia completa en «Importar manos»; todavía no hay comparación automática contra una solución GTO.</p></details>`).join(''):'No hay manos con acciones para revisar.';
+}
+$('refreshAnalysis')?.addEventListener('click',renderAnalysis);
 </script>
 
 <script>
