@@ -1,15 +1,19 @@
-MTT GTO Lab 0.3 — analizador descriptivo de historiales
-
-ACTUALIZACIÓN
-Sube index.html, sw.js y LEEME.txt a la raíz del repositorio GitHub y confirma los cambios. Mantén la carpeta icons/ y manifest.webmanifest existentes.
+MTT GTO Lab v0.4 — Replay de manos
 
 NOVEDADES
-- Pestaña Estadísticas y errores.
-- Resumen de manos importadas y acciones reconocidas.
-- Métricas preflop aproximadas (VPIP/PFR/posible 3-bet) cuando los historiales permiten atribuir acciones al héroe.
-- Frecuencias observadas de bet/raise por calle y algunos importes detectados.
-- Alertas de calidad de datos y lista de manos para revisar.
-- Los historiales se procesan localmente en el navegador.
+- Pulsa “Reproducir mano en la mesa” en cualquier mano importada.
+- Mesa visual con asientos y stacks cuando están presentes en el historial.
+- Muestra las cartas comunitarias por calle y las cartas del héroe cuando se detectan.
+- Controles Anterior, Reproducir/Pausar, Siguiente, Inicio y barra de progreso.
+- Puedes pulsar una acción del historial para saltar a ese momento.
+- El diseño se adapta a móvil y escritorio.
 
-LIMITACIONES
-Este módulo es análisis descriptivo/heurístico, no un solver GTO de equilibrio. No afirma que una decisión sea un error GTO. El % del bote solo se debe calcular cuando se reconstruye el bote previo de forma fiable; esta versión no lo calcula si no puede garantizarlo. Los datos se mantienen en memoria de la pestaña y se pierden al cerrarla.
+INSTALACIÓN EN GITHUB
+1. Descomprime este ZIP.
+2. Sube/reemplaza en la raíz del repositorio todos los archivos y la carpeta icons.
+3. Asegúrate de reemplazar index.html y sw.js.
+4. Espera a que GitHub Pages termine la publicación.
+5. Abre la web con ?v=4 al final de la dirección para evitar una URL antigua.
+
+IMPORTANTE
+La mesa muestra los datos que encuentra en el historial importado. No inventa cartas ocultas de rivales. Si faltan posiciones, stacks o cartas en el archivo, pueden aparecer incompletos. Es un reproductor descriptivo, no un solver GTO matemático. Los datos se mantienen en memoria de la pestaña y no se guardan de forma permanente.
