@@ -1,4 +1,4 @@
-MTT GTO Lab v0.4 — Replay de manos
+MTT GTO Lab v0.4.1 — Replay de manos
 
 NOVEDADES
 - Pulsa “Reproducir mano en la mesa” en cualquier mano importada.
@@ -17,3 +17,15 @@ INSTALACIÓN EN GITHUB
 
 IMPORTANTE
 La mesa muestra los datos que encuentra en el historial importado. No inventa cartas ocultas de rivales. Si faltan posiciones, stacks o cartas en el archivo, pueden aparecer incompletos. Es un reproductor descriptivo, no un solver GTO matemático. Los datos se mantienen en memoria de la pestaña y no se guardan de forma permanente.
+
+
+Correcciones v0.4.1:
+- Se eliminan jugadores duplicados en la mesa (por ejemplo, si el historial repite la lista de asientos en el resumen).
+- La mesa mantiene una altura fija y adaptable en iPhone.
+- Al avanzar la reproducción, el navegador ya no desplaza la página automáticamente hasta la acción activa.
+
+
+VERSIÓN 0.4.2 — Ajustes visuales de reproducción:
+- Asientos compactos y nombres truncados para evitar cajas que tapen cartas.
+- Texto de acción resumido dentro de la mesa; detalle completo debajo.
+- Mesa adaptable a pantallas pequeñas.
