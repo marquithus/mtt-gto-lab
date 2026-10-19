@@ -1,22 +1,24 @@
-MTT GTO Lab — paquete PWA para iPhone
+MTT GTO Lab 0.2 — importador de historiales
 
-CONTENIDO
-- index.html: aplicación web
-- manifest.webmanifest: nombre, iconos y modo de pantalla completa
-- sw.js: caché básica para volver a abrir la app tras la primera carga
-- icons/: iconos para instalación
+ARCHIVOS
+- index.html: aplicación y nuevo importador local de manos
+- manifest.webmanifest, sw.js e icons/: PWA e instalación
 
-IMPORTANTE
-Para que iOS permita añadir la app a la pantalla de inicio con comportamiento PWA, estos archivos deben estar publicados en una dirección HTTPS. Abrir index.html desde Archivos no equivale a instalar una PWA y el service worker no funciona desde file://.
+NOVEDADES
+- Importa .txt/.log/.xml y pega historiales de manos PokerStars compatibles.
+- Reconstruye cabeceras, cartas visibles, board, asientos y acciones detectadas.
+- Procesa los archivos localmente en el navegador; no los envía a un servidor.
+- CSV tabular de Poker Copilot no equivale a un historial completo; exporta “Hand history files” en XML.
 
-MÉTODO SENCILLO: GitHub Pages
-1. En un ordenador, entra en https://github.com y crea una cuenta o inicia sesión.
-2. Crea un repositorio nuevo llamado mtt-gto-lab. Puede ser público para usar GitHub Pages gratis.
-3. Sube TODOS los archivos y carpetas de este ZIP a la raíz del repositorio. Asegúrate de que index.html quede en la raíz.
-4. En Settings > Pages, elige Deploy from a branch, selecciona la rama main y la carpeta /(root), y guarda.
-5. Espera a que GitHub Pages publique la web. La dirección será similar a https://TU-USUARIO.github.io/mtt-gto-lab/ (sustituye TU-USUARIO por tu nombre real de GitHub).
-6. En el iPhone, abre esa dirección con Safari.
-7. Pulsa Compartir (cuadrado con flecha hacia arriba) > Añadir a pantalla de inicio > Añadir.
-8. Abre MTT GTO Lab desde el nuevo icono.
+LÍMITES IMPORTANTES
+Esta versión no es un solver GTO de equilibrio. No calcula frecuencias GTO reales ni EV estratégico por calle. Reconstruye el historial y las acciones reconocidas. La compatibilidad XML puede variar según la versión de Poker Copilot; prueba primero un archivo pequeño.
 
-También se puede usar otro alojamiento HTTPS. No compartas contraseñas ni datos personales en el repositorio.
+ACTUALIZAR GITHUB PAGES
+1. Abre el repositorio GitHub mtt-gto-lab y elige Add file > Upload files.
+2. Sube los archivos nuevos de este ZIP a la raíz del repositorio: index.html, sw.js y LEEME.txt. Sustituye los existentes si GitHub lo pregunta.
+3. Pulsa Commit changes. No hace falta volver a configurar Pages.
+4. Espera 1–3 minutos y abre https://marquithus.github.io/mtt-gto-lab/ en Safari.
+5. Si la app instalada sigue mostrando la versión antigua, cierra la app y vuelve a abrirla; si sigue igual, abre la URL en Safari y recarga.
+
+PRIVACIDAD
+El repositorio GitHub es público. No subas historiales de manos, exportaciones personales ni datos de juego al repositorio; solo sube los archivos de la aplicación.

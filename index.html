@@ -47,7 +47,7 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
 <div class="app">
 <header>
  <div class="brand"><div class="logo">♠</div><div><h1>MTT GTO Lab</h1><p>Tu laboratorio de estrategia de torneos</p></div></div>
- <span class="pill">PROTOTIPO v0.1</span>
+ <span class="pill">VERSIÓN 0.2 · IMPORTADOR</span>
 </header>
 <section class="hero">
  <div class="eyebrow">Entrenamiento estratégico · Texas Hold'em</div>
@@ -56,7 +56,7 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
  <div class="stats"><div class="stat"><strong>169</strong><span>clases de manos</span></div><div class="stat"><strong>MTT</strong><span>enfoque principal</span></div><div class="stat"><strong>7 días</strong><span>plan de estudio sugerido</span></div></div>
 </section>
 <nav>
- <button class="active" data-tab="solver">Solver / Spot</button><button data-tab="rangos">Rangos</button><button data-tab="quiz">Entrenar</button><button data-tab="icm">ICM y MTT</button><button data-tab="plan">Mi plan</button>
+ <button class="active" data-tab="solver">Solver / Spot</button><button data-tab="importar">Importar manos</button><button data-tab="rangos">Rangos</button><button data-tab="quiz">Entrenar</button><button data-tab="icm">ICM y MTT</button><button data-tab="plan">Mi plan</button>
 </nav>
 
 <section id="solver" class="tab">
@@ -122,6 +122,23 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
  <div class="panel"><h3>Conceptos que debe cubrir el motor completo</h3><ul class="clean"><li>Chip EV y rangos de equilibrio.</li><li>ICM por burbuja, saltos de premios y mesa final.</li><li>Risk premium por jugador y cobertura de stacks.</li><li>Push/fold y decisiones de call-off.</li><li>Rangos dependientes de posición, stack, antes y acciones previas.</li></ul></div>
 </section>
 
+
+<section id="importar" class="tab hidden">
+ <div class="panel">
+  <h3>Importar historiales de manos</h3>
+  <p class="sub">Carga historiales exportados de Poker Copilot o PokerStars. El análisis se ejecuta localmente en este navegador.</p>
+  <div class="notice"><strong>Privacidad:</strong> los archivos no se envían a un servidor. Evita compartir historiales con nombres o datos que no quieras exponer. Este módulo reconstruye acciones y datos visibles; todavía no es un solver GTO de equilibrio.</div>
+  <div class="field" style="margin-top:14px"><label for="handFiles">Seleccionar archivos (.txt, .log, .xml, .csv)</label><input id="handFiles" type="file" accept=".txt,.log,.xml,.csv,text/plain,text/csv,application/xml" multiple></div>
+  <button class="btn full" id="importFiles">Importar archivos seleccionados</button>
+  <div class="field" style="margin-top:16px"><label for="handPaste">O pega aquí el texto de una o varias manos</label><textarea id="handPaste" rows="7" placeholder="Pega el historial completo de PokerStars aquí…" style="width:100%;padding:12px;border-radius:10px;background:#0c1714;border:1px solid #345049;color:var(--text);font:13px/1.5 ui-monospace,monospace"></textarea></div>
+  <button class="btn secondary full" id="parsePaste">Analizar texto pegado</button>
+  <div id="importStatus" class="result hidden" aria-live="polite"></div>
+ </div>
+ <div class="panel hidden" id="handsPanel"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h3>Manos importadas</h3><p class="sub" id="handCount">0 manos detectadas</p></div><button class="smallbtn" id="clearHands">Vaciar lista</button></div><div id="handList"></div></div>
+ <div class="panel"><h3>Cómo exportar desde Poker Copilot (Mac)</h3><ol class="clean"><li>Abre Poker Copilot en el Mac.</li><li>En la barra de menús, elige <b>File → Export…</b>.</li><li>Selecciona <b>Hand history files – all hands</b> o <b>matching current filter</b>.</li><li>Pulsa Export y guarda el archivo XML en una carpeta fácil de encontrar.</li><li>Para empezar, prueba con un archivo pequeño de unas pocas manos.</li></ol><p class="sub">La exportación CSV de datos tabulares suele contener estadísticas, no necesariamente la secuencia completa de acciones. Para reconstruir manos, utiliza el XML de historiales completos.</p></div>
+ <div class="panel"><h3>Qué incluye el análisis inicial</h3><div class="cards"><div class="mini"><strong>Reconstrucción</strong><p>Cabecera, torneo, mesa, posiciones, cartas visibles, board y acciones detectadas.</p></div><div class="mini"><strong>Revisión</strong><p>Orden de acciones por calle y datos que falten o no se hayan podido interpretar.</p></div><div class="mini"><strong>Próxima fase</strong><p>Comparar decisiones con soluciones GTO verificadas, cuando estén disponibles para el spot.</p></div></div><p class="note">El importador puede necesitar ajustes según la versión, idioma o formato de exportación. Si un XML no se reconoce, prueba a exportar un pequeño archivo y comparte aquí una muestra anonimizada.</p></div>
+</section>
+
 <section id="plan" class="tab hidden">
  <div class="panel"><h3>Plan de estudio MTT · 7 días</h3><p class="sub">Marca las tareas que termines. Tu progreso se mantiene en esta página mientras esté abierta.</p>
  <div id="tasks"></div><div class="result"><strong id="progressText">0 de 7 días completados</strong><div style="height:8px;background:#263b34;border-radius:99px;margin-top:10px;overflow:hidden"><div id="progressBar" style="height:100%;width:0;background:var(--green);transition:width .2s"></div></div></div>
@@ -158,6 +175,52 @@ document.getElementById('nextQuiz').onclick=()=>{qi++;renderQuiz()};document.get
 document.getElementById('icmExplain').onclick=()=>{const ph=document.getElementById('icmPhase').value,st=document.getElementById('icmStack').value;let msg='';if(ph==='Lejos de premios')msg='La estrategia suele estar más próxima a chip EV, aunque la estructura del torneo y las circunstancias todavía importan.';else if(st==='Stack corto')msg='Evita arriesgar tu torneo sin comparar el rango rival, el precio del call y los stacks que quedan por actuar. El stack corto no significa pagar más amplio automáticamente.';else if(st==='Chip leader')msg='Puedes ejercer presión sobre stacks que arriesgan más valor de premios, pero no debes convertir esa ventaja en apuestas indiscriminadas.';else msg='Revisa los saltos de premios, stacks de todos los jugadores y quién cubre a quién. El ICM puede estrechar algunos calls y cambiar la presión de los all-ins.';document.getElementById('icmResult').classList.remove('hidden');document.getElementById('icmResult').innerHTML=`<strong>${ph} · ${st}</strong><div style="margin-top:7px">${msg}</div><div class="note">Guía conceptual, no cálculo ICM personalizado. Para calcularlo se necesita la distribución completa de stacks y premios.</div>`};
 const taskNames=['Revisar rangos de apertura por posición','Practicar 3-bets y defensas','Estudiar decisiones con 20–30 BB','Practicar push/fold con 5–15 BB','Comparar chip EV e ICM','Revisar cinco errores y sus explicaciones','Completar una prueba de 40 decisiones'];
 const tasks=document.getElementById('tasks');taskNames.forEach((t,i)=>{const l=document.createElement('label');l.style.display='flex';l.style.alignItems='start';l.style.gap='10px';l.style.padding='10px 0';l.style.borderBottom='1px solid var(--line)';l.innerHTML=`<input type="checkbox" style="width:18px;margin-top:2px;accent-color:#72e0ae" data-day="${i}"><span><b>Día ${i+1}</b><br>${t}</span>`;tasks.appendChild(l)});function updatePlan(){const n=tasks.querySelectorAll('input:checked').length;document.getElementById('progressText').textContent=`${n} de 7 días completados`;document.getElementById('progressBar').style.width=(n/7*100)+'%'}tasks.addEventListener('change',updatePlan);document.getElementById('resetPlan').onclick=()=>{tasks.querySelectorAll('input').forEach(x=>x.checked=false);updatePlan()};
+</script>
+
+<script>
+// MTT GTO Lab 0.2 — importador local de historiales
+let importedHands=[];
+const $=id=>document.getElementById(id);
+function showImportStatus(html){const el=$('importStatus');el.classList.remove('hidden');el.innerHTML=html;}
+function decodeXmlText(raw){
+ try{const doc=new DOMParser().parseFromString(raw,'application/xml');if(!doc.querySelector('parsererror')){
+  const candidates=[...doc.querySelectorAll('*')].map(n=>(n.textContent||'').trim()).filter(t=>/PokerStars (?:Zoom )?Hand #|Hand #\d+:/i.test(t)&&t.length>80);
+  if(candidates.length)return candidates.join('\n\n');
+  return doc.documentElement.textContent||raw;
+ }}catch(e){} return raw;
+}
+function parseHands(raw,filename='texto pegado'){
+ let text=raw.replace(/^\uFEFF/,'');
+ if(/^\s*</.test(text)&&/<[^>]+>/.test(text))text=decodeXmlText(text);
+ const starts=[...text.matchAll(/^(?=(?:PokerStars (?:Zoom )?Hand #|Hand #\d+\s*:))/gmi)].map(m=>m.index);
+ let chunks=[];
+ if(starts.length){for(let i=0;i<starts.length;i++){const chunk=text.slice(starts[i],starts[i+1]??text.length).trim();if(chunk)chunks.push(chunk)}}
+ else if(/PokerStars (?:Zoom )?Hand #/i.test(text)) chunks=text.split(/(?=PokerStars (?:Zoom )?Hand #)/i).map(x=>x.trim()).filter(Boolean);
+ if(!chunks.length)return {hands:[],reason:/\.csv$/i.test(filename)?'El CSV parece ser una exportación tabular. Para reconstruir acciones, exporta “Hand history files” en XML desde Poker Copilot.':'No se detectaron cabeceras reconocibles de manos PokerStars. Prueba con el XML de historiales completos o pega el texto original de una mano.'};
+ const hands=chunks.map((raw,i)=>{
+  const line=raw.split(/\r?\n/).find(x=>/PokerStars (?:Zoom )?Hand #|Hand #\d+\s*:/i.test(x))||`Mano ${i+1}`;
+  const id=(line.match(/Hand #([\w-]+)/i)||[])[1]||'';
+  const game=(raw.match(/\(([^\n]*?\$?\d[^\n]*?)\)/)||[])[1]||'';
+  const date=(raw.match(/-\s+(\d{4}\/\d{2}\/\d{2}\s+\d{1,2}:\d{2}:\d{2})/i)||[])[1]||'';
+  const table=(raw.match(/Table ['“](.+?)['”]/i)||[])[1]||'';
+  const hero=(raw.match(/Dealt to ([^\s\[]+)\s+\[([^\]]+)\]/i)||[]);
+  const board=(raw.match(/\*\*\* FLOP \*\*\*\s+\[([^\]]+)\](?:\s+\[([^\]]+)\])?/i)||[]);
+  const streets=[];let street='Preflop';
+  for(const ln of raw.split(/\r?\n/)){
+   if(/\*\*\* FLOP \*\*\*/i.test(ln))street='Flop';else if(/\*\*\* TURN \*\*\*/i.test(ln))street='Turn';else if(/\*\*\* RIVER \*\*\*/i.test(ln))street='River';else if(/\*\*\* SHOW DOWN \*\*\*/i.test(ln))street='Showdown';else if(/\*\*\* SUMMARY \*\*\*/i.test(ln))street='Resumen';
+   if(/^(?:[^\s:][^:]*: )?(?:folds|checks|calls|bets|raises|collected|shows|mucks|is all-in|posts|returns|doesn't show)/i.test(ln.trim())||/\b(folds|checks|calls|bets|raises|collected|shows|mucks|is all-in|posts small blind|posts big blind)\b/i.test(ln))streets.push({street,line:ln.trim()});
+  }
+  const seats=[...raw.matchAll(/Seat (\d+):\s+(.+?)\s+\(([^)]+)\)/g)].map(m=>({seat:m[1],player:m[2],stack:m[3]}));
+  const pot=(raw.match(/Total pot\s+([^|\n]+)/i)||[])[1]?.trim()||'';
+  return {id,line,filename,date,game,table,heroName:hero[1]||'',heroCards:hero[2]||'',boardText:board.slice(1).filter(Boolean).join(' / '),seats,actions:streets,pot,raw};
+ });
+ return {hands,reason:''};
+}
+function renderHands(){const panel=$('handsPanel'),list=$('handList');if(!importedHands.length){panel.classList.add('hidden');return}panel.classList.remove('hidden');$('handCount').textContent=`${importedHands.length} mano(s) detectada(s) · datos locales`;list.innerHTML='';importedHands.forEach((h,i)=>{const card=document.createElement('details');card.className='mini';card.style.margin='10px 0';const summary=document.createElement('summary');summary.style.cursor='pointer';summary.style.fontWeight='800';summary.textContent=`${h.id?'Mano #'+h.id:'Mano '+(i+1)} · ${h.heroName||'Jugador no detectado'} · ${h.heroCards||'cartas no detectadas'}`;card.appendChild(summary);const meta=document.createElement('p');meta.style.margin='10px 0';meta.textContent=[h.date,h.game,h.table,h.pot?'Bote final: '+h.pot:''].filter(Boolean).join(' · ')||'Metadatos parciales';card.appendChild(meta);if(h.boardText){const b=document.createElement('p');b.textContent='Board detectado: '+h.boardText;card.appendChild(b)}if(h.seats.length){const p=document.createElement('p');p.textContent='Asientos: '+h.seats.map(s=>`${s.player} (${s.stack})`).join(' · ');card.appendChild(p)}const actionTitle=document.createElement('p');actionTitle.style.fontWeight='800';actionTitle.textContent=`Acciones detectadas (${h.actions.length})`;card.appendChild(actionTitle);const ol=document.createElement('ol');ol.style.paddingLeft='22px';h.actions.slice(0,150).forEach(a=>{const li=document.createElement('li');li.textContent=`${a.street}: ${a.line}`;ol.appendChild(li)});card.appendChild(ol);if(!h.actions.length){const warn=document.createElement('p');warn.textContent='No se detectaron acciones con este formato. Comprueba que sea el historial completo en texto.';card.appendChild(warn)}const rawBtn=document.createElement('button');rawBtn.className='smallbtn';rawBtn.textContent='Ver texto original';rawBtn.onclick=()=>{const pre=card.querySelector('pre');if(pre)pre.remove();else{const p=document.createElement('pre');p.style.whiteSpace='pre-wrap';p.style.overflowWrap='anywhere';p.style.fontSize='11px';p.textContent=h.raw;card.appendChild(p)}};card.appendChild(rawBtn);list.appendChild(card)});}
+function addImported(raw,name){const res=parseHands(raw,name);if(!res.hands.length){showImportStatus(`<strong>No se detectaron manos</strong><div class="note">${res.reason}</div>`);return 0}res.hands.forEach(h=>{h.filename=name;importedHands.push(h)});renderHands();showImportStatus(`<strong>Importación completada</strong><div>${res.hands.length} mano(s) detectada(s) en ${name}.</div><div class="note">Las manos se mantienen en memoria en esta pestaña. No son una solución GTO: son una reconstrucción del historial y sus acciones.</div>`);return res.hands.length;}
+$('importFiles').addEventListener('click',async()=>{const files=[...$('handFiles').files];if(!files.length){showImportStatus('<strong>Selecciona primero un archivo</strong>');return}let total=0;for(const file of files){try{const raw=await file.text();total+=addImported(raw,file.name)}catch(e){showImportStatus(`<strong>No se pudo leer ${file.name}</strong><div class="note">Prueba a abrirlo y exportarlo de nuevo en formato XML de historiales completos.</div>`)}}if(total)showImportStatus(`<strong>Importación completada</strong><div>${total} mano(s) detectada(s) en ${files.length} archivo(s).</div><div class="note">Los historiales se procesan localmente y no se guardan permanentemente.</div>`)});
+$('parsePaste').addEventListener('click',()=>{const raw=$('handPaste').value.trim();if(!raw){showImportStatus('<strong>Pega primero el historial de una mano</strong>');return}addImported(raw,'texto pegado')});
+$('clearHands').addEventListener('click',()=>{importedHands=[];renderHands();showImportStatus('<strong>Lista vaciada</strong><div class="note">Se han retirado las manos de esta sesión del navegador.</div>')});
 </script>
 
 <script>
