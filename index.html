@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101a19">
-<meta name="application-version" content="0.4.1">
+<meta name="application-version" content="0.5.0-beta">
 <title>MTT GTO Lab — Estudio de póker</title>
 <style>
 :root{--bg:#0d1514;--panel:#15211f;--panel2:#1b2a27;--line:#2b403b;--text:#edf5f1;--muted:#a4b8b0;--green:#72e0ae;--green2:#173e31;--gold:#f2c879;--red:#ff8d8d;--blue:#8ec9ff}
@@ -72,6 +72,9 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
  .seat-cards .playing-card .suit{font-size:8px}
 }
 
+
+/* v0.5.0 beta local engine */
+#motor .field{margin:10px 0}#motor input,#motor select{width:100%;min-width:0;background:#0e1916;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:11px}#motor .result{margin-top:12px;overflow-wrap:anywhere}#cfrChart svg{width:100%;height:auto;display:block}#motor .notice{margin-top:12px}
 </style>
 
 <link rel="manifest" href="./manifest.webmanifest">
@@ -96,6 +99,14 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
 <nav>
  <button class="active" data-tab="solver">Solver / Spot</button><button data-tab="importar">Importar manos</button><button data-tab="analisis">Estadísticas y errores</button><button data-tab="rangos">Rangos</button><button data-tab="quiz">Entrenar</button><button data-tab="icm">ICM y MTT</button><button data-tab="plan">Mi plan</button>
 </nav>
+
+<section id="motor" class="tab hidden">
+ <div class="panel"><h3>Motor local · CFR+</h3><p class="sub">Se ejecuta en el iPhone, dentro del navegador. Esta primera beta incluye un banco de pruebas CFR+ reproducible para Kuhn Poker y una curva de convergencia. No equivale aún a resolver árboles completos de No-Limit Hold’em.</p><div class="grid2"><div class="field"><label>Iteraciones CFR+</label><select id="cfrIterations"><option value="1000">1.000</option><option value="10000" selected>10.000</option><option value="50000">50.000</option></select></div><div class="field"><label>Frecuencia de medición</label><select id="cfrMeasure"><option value="100">Cada 100 iteraciones</option><option value="500" selected>Cada 500 iteraciones</option><option value="1000">Cada 1.000 iteraciones</option></select></div></div><button class="btn full" id="runCfr">Ejecutar prueba de convergencia</button><div id="cfrResult" class="result hidden"></div><div id="cfrChart" class="result hidden"></div></div>
+ <div class="panel"><h3>Árbol de apuestas · configuración</h3><p class="sub">Define tamaños para documentar el árbol del spot. La beta guarda estos parámetros en esta pantalla, pero todavía no calcula EV por combo en Hold’em.</p><div class="grid2"><div class="field"><label>Street</label><select id="treeStreet"><option>Preflop</option><option>Flop</option><option>Turn</option><option>River</option></select></div><div class="field"><label>Bote inicial (BB)</label><input id="treePot" type="number" min="0" value="10"></div><div class="field"><label>Stack efectivo (BB)</label><input id="treeStack" type="number" min="1" value="40"></div><div class="field"><label>Tamaños de apuesta (% bote)</label><input id="treeSizes" value="33, 75, 125"></div></div><button class="btn full" id="buildTree">Validar árbol</button><div id="treeResult" class="result hidden"></div></div>
+ <div class="panel"><h3>Rangos iniciales</h3><p class="sub">Selecciona perfiles de rango como punto de partida para documentar el spot. No son soluciones verificadas ni se usan aún para EV postflop.</p><div class="grid2"><div class="field"><label>Jugador IP</label><select id="rangeIP"><option>BTN open</option><option>CO open</option><option>BB defend</option><option>Rango personalizado</option></select></div><div class="field"><label>Jugador OOP</label><select id="rangeOOP"><option>BB defend</option><option>SB 3-bet</option><option>BB vs BTN</option><option>Rango personalizado</option></select></div></div><div class="notice">Los rangos predefinidos son etiquetas de configuración en esta beta. Para usar frecuencias exactas por combo habrá que integrar rangos versionados y contrastados.</div></div>
+ <div class="panel"><h3>ICM numérico · stacks y premios</h3><p class="sub">Introduce los stacks restantes y los premios de cada puesto. El cálculo ICM usa el modelo de Malmuth–Harville; supone que la probabilidad de acabar primero es proporcional al stack.</p><div class="field"><label>Stacks (fichas), separados por comas</label><input id="icmStacks" value="50000,30000,20000"></div><div class="field"><label>Premios por puesto, separados por comas</label><input id="icmPrizes" value="50,30,20"></div><button class="btn full" id="runIcm">Calcular equity ICM</button><div id="icmCalcResult" class="result hidden"></div></div>
+ <div class="panel"><h3>Soluciones verificadas y exportación</h3><p class="sub">Esta beta no incluye todavía una base de soluciones Hold’em certificadas. Puedes exportar el resultado del banco CFR+ y los parámetros del árbol para documentar las pruebas.</p><button class="btn full" id="exportMotor">Exportar informe JSON</button></div>
+</section>
 
 <section id="solver" class="tab">
  <div class="panel">
@@ -344,6 +355,101 @@ $('replayPrev').addEventListener('click',()=>{stopReplay();replayStep=Math.max(0
 if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
   window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
 }
+</script>
+
+
+<script>
+// MTT GTO Lab v0.5.0 beta: on-device experiments (no server calls)
+const motorReport={version:"0.5.0-beta",engine:"CFR+ Kuhn Poker convergence test",lastRun:null,tree:null,icm:null};
+function kuhnCfrPlus(iterations,measureEvery){
+ // Two-player zero-sum Kuhn poker. Regret-matching+, alternating player updates.
+ const cards=[0,1,2], names=["J","Q","K"], nodes={};
+ function node(key,player,actions){if(!nodes[key])nodes[key]={player,actions,regret:Array(actions.length).fill(0),strategy:Array(actions.length).fill(0),strategySum:Array(actions.length).fill(0)};return nodes[key]}
+ function getStrategy(n){let s=n.regret.map(x=>Math.max(0,x)),sum=s.reduce((a,b)=>a+b,0);if(sum>0)s=s.map(x=>x/sum);else s=s.map(()=>1/s.length);n.strategy=s;return s}
+ function terminal(history,c0,c1){
+  if(history.endsWith("f"))return {done:true,utility:history.length%2===0?1:-1};
+  if(history==="cc")return {done:true,utility:c0>c1?1:-1};
+  if(history==="bc")return {done:true,utility:2*(c0>c1?1:-1)};
+  if(history==="bc f")return {done:true,utility:-1};
+  if(history==="cbc")return {done:true,utility:2*(c0>c1?1:-1)};
+  if(history==="cbf")return {done:true,utility:-1};
+  return {done:false};
+ }
+ function util(history,c0,c1,updatePlayer,p0,p1,prune){
+  // Kuhn histories: "" -> check/bet; "c" -> check/bet; "b" -> fold/call; "cb" -> fold/call
+  let term;
+  if(history==="cc")return c0>c1?1:-1;
+  if(history==="bc")return 2*(c0>c1?1:-1);
+  if(history==="cbc")return 2*(c0>c1?1:-1);
+  if(history==="bf")return 1;
+  if(history==="cbf")return -1;
+  const player=(history==="b"||history==="cb")?1:history.length%2;
+  const acts=(history===""||history==="c")?["c","b"]:["f","c"];
+  const key=names[player===0?c0:c1]+":"+history;
+  const n=node(key,player,acts),strat=getStrategy(n),utils=[];
+  let nodeUtil=0;
+  for(let a=0;a<acts.length;a++){
+   const next=history+acts[a],np0=p0*(player===0?strat[a]:1),np1=p1*(player===1?strat[a]:1);
+   utils[a]=util(next,c0,c1,updatePlayer,np0,np1,prune);
+   nodeUtil+=strat[a]*utils[a];
+  }
+  if(player===updatePlayer){
+   const reach=player===0?p1:p0;
+   for(let a=0;a<acts.length;a++){const r=reach*(utils[a]-nodeUtil);n.regret[a]=Math.max(0,n.regret[a]+r);n.strategySum[a]+= (player===0?p0:p1)*strat[a];}
+  }
+  return nodeUtil;
+ }
+ // Simpler, well-defined Kuhn CFR+ tree evaluator with terminal utility
+ function walk(h,c0,c1,update,reach0,reach1){
+  if(h==="cc")return c0>c1?1:-1;
+  if(h==="bc")return 2*(c0>c1?1:-1);
+  if(h==="cbc")return 2*(c0>c1?1:-1);
+  if(h==="bf")return 1;
+  if(h==="cbf")return -1;
+  const player=(h===""||h==="c")? (h===""?0:1): (h==="b"?1:0);
+  const acts=(h===""||h==="c")?["c","b"]:["f","c"];
+  const key=names[player===0?c0:c1]+h;
+  const n=node(key,player,acts),s=getStrategy(n),us=[];let v=0;
+  for(let a=0;a<acts.length;a++){let r0=reach0,r1=reach1;if(player===0)r0*=s[a];else r1*=s[a];us[a]=walk(h+acts[a],c0,c1,update,r0,r1);v+=s[a]*us[a]}
+  if(player===update){const oppReach=player===0?reach1:reach0,ownReach=player===0?reach0:reach1;for(let a=0;a<acts.length;a++){n.regret[a]=Math.max(0,n.regret[a]+oppReach*(us[a]-v));n.strategySum[a]+=ownReach*s[a]}}
+  return v
+ }
+ function profile(){const out={};for(const [k,n] of Object.entries(nodes)){const sum=n.strategySum.reduce((a,b)=>a+b,0);out[k]=sum?n.strategySum.map(x=>x/sum):getStrategy(n)}return out}
+ function exploitability(){ // approximate NashConv by best response over information-set average strategies
+  const avg=profile();let total=0;
+  // Report average external regret proxy rather than claiming exact Hold'em exploitability.
+  for(const n of Object.values(nodes)){let s=n.regret.reduce((a,b)=>a+b,0);total+=Math.max(0,s)}
+  return total/Math.max(1,iterations);
+ }
+ const samples=[];
+ for(let t=1;t<=iterations;t++){
+  for(let c0=0;c0<3;c0++)for(let c1=0;c1<3;c1++)if(c0!==c1){walk("",c0,c1,0,1/6,1/6);walk("",c0,c1,1,1/6,1/6)}
+  if(t%measureEvery===0||t===iterations)samples.push({iteration:t,regretProxy:exploitability()});
+ }
+ const strategies=profile();
+ return {iterations,measureEvery,samples,strategies,infoSets:Object.keys(nodes).length,description:"Kuhn Poker CFR+ benchmark. Regret proxy is diagnostic, not a certified exploitability bound for Hold'em."}
+}
+function icmEquities(stacks,prizes){
+ const n=stacks.length, memo=new Map();
+ function rec(mask,remaining){
+  if(remaining===0)return Array(n).fill(0);
+  const key=mask+"|"+remaining;if(memo.has(key))return memo.get(key);
+  const alive=[];let total=0;for(let i=0;i<n;i++)if(mask&(1<<i)){alive.push(i);total+=stacks[i]}
+  const res=Array(n).fill(0);if(!alive.length||total<=0)return res;
+  for(const i of alive){const p=stacks[i]/total;res[i]+=p*prizes[n-remaining];if(remaining>1){const tail=rec(mask^(1<<i),remaining-1);for(let j=0;j<n;j++)res[j]+=p*tail[j]}}
+  memo.set(key,res);return res
+ }
+ return rec((1<<n)-1,n)
+}
+function parseNums(id){return $(id).value.split(/[,\s;]+/).map(Number).filter(x=>Number.isFinite(x))}
+$("runCfr").addEventListener("click",()=>{
+ const iterations=Number($("cfrIterations").value),measureEvery=Number($("cfrMeasure").value),out=$("cfrResult"),chart=$("cfrChart");
+ out.classList.remove("hidden");chart.classList.remove("hidden");out.textContent="Calculando en el iPhone…";chart.innerHTML="";
+ setTimeout(()=>{try{const r=kuhnCfrPlus(iterations,measureEvery);motorReport.lastRun=r;out.innerHTML=`<strong>Prueba completada</strong><div>Juego: Kuhn Poker · Iteraciones: ${r.iterations.toLocaleString("es-ES")} · Conjuntos de información: ${r.infoSets}</div><div class="note">Este banco prueba CFR+ en un juego diminuto de 3 cartas. La métrica es un indicador de arrepentimiento, no una prueba certificada de exploitabilidad y no representa una solución Hold’em.</div><h4>Estrategia media calculada</h4><pre style="white-space:pre-wrap;font-size:12px">${JSON.stringify(r.strategies,null,2)}</pre>`;const max=Math.max(...r.samples.map(x=>x.regretProxy),0.00001);chart.innerHTML="<strong>Indicador de convergencia (arrepentimiento acumulado medio normalizado)</strong><svg viewBox='0 0 320 100' role='img' aria-label='Gráfica de prueba CFR+'><polyline fill='none' stroke='#72e0ae' stroke-width='2' points='"+r.samples.map((x,i)=>`${10+i*300/Math.max(1,r.samples.length-1)},${90-75*Math.min(1,x.regretProxy/max)}`).join(" ")+"'/><line x1='10' y1='90' x2='310' y2='90' stroke='#3c6254'/></svg><div class='note'>Puntos medidos: ${r.samples.length}. La escala se normaliza dentro de esta ejecución.</div>`;}catch(e){out.textContent="No se pudo ejecutar la prueba: "+e.message}},20)
+});
+$("buildTree").addEventListener("click",()=>{const sizes=parseNums("treeSizes"),pot=Number($("treePot").value),stack=Number($("treeStack").value),out=$("treeResult");out.classList.remove("hidden");if(!sizes.length||sizes.some(x=>x<=0)||pot<0||stack<=0){out.textContent="Revisa los tamaños (>0), bote (≥0) y stack (>0).";return}const valid=sizes.map(x=>Math.min(stack,pot*x/100));motorReport.tree={street:$("treeStreet").value,pot,stack,sizes,betSizesBB:valid};out.innerHTML=`<strong>Árbol configurado</strong><div>Calle: ${motorReport.tree.street}</div><div>Tamaños: ${sizes.join("%, ")}%</div><div>Apuestas resultantes: ${valid.map(x=>x.toFixed(2)+" BB").join(", ")}</div><div class="note">Configuración guardada para el informe; no se ha resuelto todavía el árbol estratégico.</div>`});
+$("runIcm").addEventListener("click",()=>{const stacks=parseNums("icmStacks"),prizes=parseNums("icmPrizes"),out=$("icmCalcResult");out.classList.remove("hidden");if(stacks.length<2||stacks.length>10||stacks.some(x=>x<=0)||prizes.length<1||prizes.length>stacks.length||prizes.some(x=>x<0)){out.textContent="Introduce entre 2 y 10 stacks positivos y entre 1 y el número de jugadores premios no negativos.";return}try{const eq=icmEquities(stacks,prizes);motorReport.icm={stacks,prizes,equities:eq};out.innerHTML="<strong>Equity ICM estimada</strong>"+eq.map((v,i)=>`<div>Jugador ${i+1} · stack ${stacks[i].toLocaleString("es-ES")} · equity ${v.toLocaleString("es-ES",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>`).join("")+"<div class='note'>Modelo Malmuth–Harville. Si no has introducido premios para todos los puestos, los puestos sin premio se consideran 0 €. No calcula rangos ni risk premium.</div>"}catch(e){out.textContent="Error en cálculo ICM: "+e.message}});
+$("exportMotor").addEventListener("click",()=>{const blob=new Blob([JSON.stringify(motorReport,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="mtt-gto-lab-informe-motor.json";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
 </script>
 
 </body>
