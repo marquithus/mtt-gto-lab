@@ -29,3 +29,11 @@ VERSIÓN 0.4.2 — Ajustes visuales de reproducción:
 - Asientos compactos y nombres truncados para evitar cajas que tapen cartas.
 - Texto de acción resumido dentro de la mesa; detalle completo debajo.
 - Mesa adaptable a pantallas pequeñas.
+
+
+VERSIÓN 0.5.0 BETA — Motor local:
+- Banco de pruebas CFR+ para Kuhn Poker con mediciones diagnósticas.
+- Configuración inicial de árbol de apuestas por calle.
+- Calculadora ICM Malmuth–Harville para 2–10 jugadores.
+- Exportación de informe JSON.
+Limitaciones: todavía no es un solver postflop de No-Limit Hold’em; no calcula EV/frecuencias por combo Hold’em ni incluye una base certificada de soluciones. La prueba de convergencia es diagnóstica y no una certificación matemática de exploitabilidad.

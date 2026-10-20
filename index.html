@@ -97,7 +97,7 @@ ul.clean{padding-left:19px;color:#c7d8d0}ul.clean li{margin:7px 0}
  <div class="stats"><div class="stat"><strong>169</strong><span>clases de manos</span></div><div class="stat"><strong>MTT</strong><span>enfoque principal</span></div><div class="stat"><strong>7 días</strong><span>plan de estudio sugerido</span></div></div>
 </section>
 <nav>
- <button class="active" data-tab="solver">Solver / Spot</button><button data-tab="importar">Importar manos</button><button data-tab="analisis">Estadísticas y errores</button><button data-tab="rangos">Rangos</button><button data-tab="quiz">Entrenar</button><button data-tab="icm">ICM y MTT</button><button data-tab="plan">Mi plan</button>
+ <button class="active" data-tab="solver">Solver / Spot</button><button data-tab="motor">Motor local beta</button><button data-tab="importar">Importar manos</button><button data-tab="analisis">Estadísticas y errores</button><button data-tab="rangos">Rangos</button><button data-tab="quiz">Entrenar</button><button data-tab="icm">ICM y MTT</button><button data-tab="plan">Mi plan</button>
 </nav>
 
 <section id="motor" class="tab hidden">
@@ -360,6 +360,7 @@ if ("serviceWorker" in navigator && (location.protocol === "https:" || location.
 
 <script>
 // MTT GTO Lab v0.5.0 beta: on-device experiments (no server calls)
+const $ = id => document.getElementById(id);
 const motorReport={version:"0.5.0-beta",engine:"CFR+ Kuhn Poker convergence test",lastRun:null,tree:null,icm:null};
 function kuhnCfrPlus(iterations,measureEvery){
  // Two-player zero-sum Kuhn poker. Regret-matching+, alternating player updates.
